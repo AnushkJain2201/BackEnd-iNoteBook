@@ -4,13 +4,14 @@ const router = express.Router();
 const User = require('../models/User');
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
-const  jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const fetchuser = require("../middleware/fetchUser");
 const JWT_SECRET = "Harryisagoodb$oy";
 
 
 
 // Same As app.get In The index.js
-// Create A User Using: POST "/api/auth/createuser"
+// ROUTE 1: Create A User Using: POST "/api/auth/createuser"
 router.post('/createuser', //The Following Array Contains The Validation Methods To Check Every Field OF User Model
     [
         body('name', 'Enter A Valid Name').isLength({ min: 3 }),
@@ -38,7 +39,7 @@ router.post('/createuser', //The Following Array Contains The Validation Methods
 
             // Creating Salt And Hashing THe Password Using bcryptjs
             const salt = await bcrypt.genSalt(10);
-            const secPass = await bcrypt.hash(req.body.password , salt);
+            const secPass = await bcrypt.hash(req.body.password, salt);
             // Else Do This
             // This Method Will Create All The Field As Per Our User Schema And Save It To Our Mongo DataBase
             user = await User.create({
@@ -48,14 +49,14 @@ router.post('/createuser', //The Following Array Contains The Validation Methods
             });
 
             const data = {
-                user:{
+                user: {
                     id: user.id
                 }
             }
 
             // Here We Are Sending The JsonWebToken as The Response By Using The jsonwebtoken Package
-            const authtoken = jwt.sign(data , JWT_SECRET);
-            res.json({authtoken});
+            const authtoken = jwt.sign(data, JWT_SECRET);
+            res.json({ authtoken });
         } catch (error) {
             console.log(error.message);
             res.status(500).send("Some Internal Error Ocurred");
@@ -69,8 +70,8 @@ router.post('/createuser', //The Following Array Contains The Validation Methods
     })
 
 
-    // Authenticate A User : POST "/api/auth/login"
-    router.post('/login', //The Following Array Contains The Validation Methods To Check Every Field OF User Model
+// ROUTE 2: Authenticate A User : POST "/api/auth/login"
+router.post('/login', //The Following Array Contains The Validation Methods To Check Every Field OF User Model
     [
         body('email', 'Enter A Valid Email').isEmail(),
         body('password', 'Password Cannot Be Blank').exists()
@@ -86,42 +87,60 @@ router.post('/createuser', //The Following Array Contains The Validation Methods
         }
 
         // Destucturing To Get The Email And Password From The req.body
-        const {email , password} = req.body;
+        const { email, password } = req.body;
 
-        try{
+        try {
 
             // Try To Find Any User With The Same Email
-            let user = await User.findOne({email});
+            let user = await User.findOne({ email });
 
             // If We Are Not Able To Find Any User With The Same Email Then We Will Return The Error
-            if(!user){
-                return res.status(400).json({error: "Please Try To Login WIth Correct Credentials"});
+            if (!user) {
+                return res.status(400).json({ error: "Please Try To Login WIth Correct Credentials" });
             }
 
             // If We Find Any Match Then The Method Below Will Compare The Entered Password With The 
             // Hashed Password That Is Stored In Our Database
-            const passwordCompare = await bcrypt.compare(password , user.password);
+            const passwordCompare = await bcrypt.compare(password, user.password);
 
             // If The Comparison Return False Then We Will Send The Error
-            if(!passwordCompare){
-                return res.status(400).json({error: "Please Try To Login WIth Correct Credentials"});
+            if (!passwordCompare) {
+                return res.status(400).json({ error: "Please Try To Login WIth Correct Credentials" });
             }
 
             // Here We Are Sending The JsonWebToken as The Response By Using The jsonwebtoken Package
             const data = {
-                user:{
+                user: {
                     id: user.id
                 }
             }
 
-            const authtoken = jwt.sign(data , JWT_SECRET);
-            res.json({authtoken});
+            const authtoken = jwt.sign(data, JWT_SECRET);
+            res.json({ authtoken });
 
-        }catch (error) {
+        } catch (error) {
             console.log(error.message);
             res.status(500).send("Some Internal Error Ocurred");
         }
 
     })
+
+
+// ROUTE 3: Get Logged In Details : POST "/api/auth/getuser" Login Required
+router.post('/getuser', fetchuser, async (req, res) => {
+    try {
+        // Here We Will Get The Id In The Request By The fetchuser Middleware Function 
+        const userId = req.user.id;
+
+        // Here We Are Using That ID To Get All The User Infomation Except Its Password
+        const user = await User.findById(userId).select("-password");
+
+        res.send(user);
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).send("Some Internal Error Ocurred");
+    }
+})
+
 
 module.exports = router
