@@ -36,6 +36,7 @@ router.post('/createuser', //The Following Array Contains The Validation Methods
                 return res.status(400).json({ error: "Sorry A User With this Email Already Exist" });
             }
 
+            // Creating Salt And Hashing THe Password Using bcryptjs
             const salt = await bcrypt.genSalt(10);
             const secPass = await bcrypt.hash(req.body.password , salt);
             // Else Do This
@@ -51,6 +52,8 @@ router.post('/createuser', //The Following Array Contains The Validation Methods
                     id: user.id
                 }
             }
+
+            // Here We Are Sending The JsonWebToken as The Response By Using The jsonwebtoken Package
             const authtoken = jwt.sign(data , JWT_SECRET);
             res.json({authtoken});
         } catch (error) {
