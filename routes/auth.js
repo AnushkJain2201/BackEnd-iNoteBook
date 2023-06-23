@@ -77,13 +77,13 @@ router.post('/login', //The Following Array Contains The Validation Methods To C
         body('password', 'Password Cannot Be Blank').exists()
 
     ], async (req, res) => {
-
+        let success = false
         // The Result Will Contain The Array Of Error If Error Occurred
         const result = validationResult(req);
 
         // Check If The Result Contains Any Error
         if (!result.isEmpty()) {
-            return res.status(400).json({ errors: result.array() });
+            return res.status(400).json({ success , errors: result.array() });
         }
 
         // Destucturing To Get The Email And Password From The req.body
@@ -96,7 +96,7 @@ router.post('/login', //The Following Array Contains The Validation Methods To C
 
             // If We Are Not Able To Find Any User With The Same Email Then We Will Return The Error
             if (!user) {
-                return res.status(400).json({ error: "Please Try To Login WIth Correct Credentials" });
+                return res.status(400).json({ success , error: "Please Try To Login WIth Correct Credentials" });
             }
 
             // If We Find Any Match Then The Method Below Will Compare The Entered Password With The 
@@ -105,7 +105,7 @@ router.post('/login', //The Following Array Contains The Validation Methods To C
 
             // If The Comparison Return False Then We Will Send The Error
             if (!passwordCompare) {
-                return res.status(400).json({ error: "Please Try To Login WIth Correct Credentials" });
+                return res.status(400).json({ success , error: "Please Try To Login WIth Correct Credentials" });
             }
 
             // Here We Are Sending The JsonWebToken as The Response By Using The jsonwebtoken Package
@@ -116,7 +116,8 @@ router.post('/login', //The Following Array Contains The Validation Methods To C
             }
 
             const authtoken = jwt.sign(data, JWT_SECRET);
-            res.json({ authtoken });
+            success = true;
+            res.json({ success , authtoken });
 
         } catch (error) {
             console.log(error.message);
