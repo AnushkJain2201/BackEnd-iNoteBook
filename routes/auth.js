@@ -19,12 +19,13 @@ router.post('/createuser', //The Following Array Contains The Validation Methods
         body('password', 'Password Must Be Atleast 5 Characters').isLength({ min: 5 })
     ], async (req, res) => {
 
+        let success = false
         // The Result Will Contain The Array Of Error If Error Occurred
         const result = validationResult(req);
 
         // Check If The Result Contains Any Error
         if (!result.isEmpty()) {
-            return res.status(400).json({ errors: result.array() });
+            return res.status(400).json({ success , errors: result.array() });
         }
 
         try {
@@ -34,7 +35,7 @@ router.post('/createuser', //The Following Array Contains The Validation Methods
 
             // If Found True Then Show The Error
             if (user) {
-                return res.status(400).json({ error: "Sorry A User With this Email Already Exist" });
+                return res.status(400).json({ success , error: "Sorry A User With this Email Already Exist" });
             }
 
             // Creating Salt And Hashing THe Password Using bcryptjs
@@ -56,7 +57,8 @@ router.post('/createuser', //The Following Array Contains The Validation Methods
 
             // Here We Are Sending The JsonWebToken as The Response By Using The jsonwebtoken Package
             const authtoken = jwt.sign(data, JWT_SECRET);
-            res.json({ authtoken });
+            success = true;
+            res.json({ success, authtoken });
         } catch (error) {
             console.log(error.message);
             res.status(500).send("Some Internal Error Ocurred");
